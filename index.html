@@ -2696,8 +2696,9 @@ window.addEventListener('beforeunload', function (event) {
 	}
 
 
-	function analisarRegrasNegocioCSV(conteudo, ufSelecionada) {
-    const linhas = conteudo.split(\(/\r\)?\n/).filter(l => l.trim() !== "");
+function analisarRegrasNegocioCSV(conteudo, ufSelecionada) {
+    // 🎯 CORREÇÃO: Expressão regular limpa e nativa para quebrar linhas por \n ou \r\n
+    const linhas = conteudo.split(/\r?\n/).filter(l => l.trim() !== "");
     if (linhas.length < 2) {
         return { valido: false, erroCritico: "O arquivo enviado não possui dados operacionais." };
     }
