@@ -2695,165 +2695,39 @@ window.addEventListener('beforeunload', function (event) {
 	    return { sucesso: true };
 	}
 
-		function analisarRegrasNegocioCSV(conteudo, ufSelecionada) {
-	    const linhas = conteudo.split(/\r?\n/).filter(l => l.trim() !== "");
-	    if (linhas.length < 2) {
-	        return { valido: false, erroCritico: "O arquivo enviado não possui dados operacionais." };
-	    }
-	
-	    // =========================================================================
-	    // REGRA 1: Validação Rígida de Cabeçalho e Ordem Exata
-	    // =========================================================================
-	    const cabecalhoEsperado = ["ROMANEIO", "OV", "FORNEC_CROSS", "NF_CROSS", "FORNEC_LAST", "NF_LAST", "VOLUMES"];
-	    
-	    // Captura a primeira linha e normaliza os termos para comparação limpa
-	    const cabecalhoReal = linhas[0].toUpperCase().replace(/[\s\t\r]/g, "").split(";"); 
-	    
-	    if (cabecalhoReal.length < cabecalhoEsperado.length) {
-	        return { valido: false, erroCritico: "Layout Inválido: O arquivo possui menos colunas do que o padrão obrigatório." };
-	    }
-	
-	    for (let i = 0; i < cabecalhoEsperado.length; i++) {
-	        if (cabecalhoReal[i] !== cabecalhoEsperado[i]) {
-	            return { 
-	                valido: false, 
-	                erroCritico: `Layout Incorreto: A coluna no índice ${i + 1} deveria ser [ ${cabecalhoEsperado[i]} ], mas foi detectada como [ ${cabecalhoReal[i] || 'VAZIA'} ].` 
-	            };
-	        }
-	    }
-	
-	    // Estruturas para armazenamento de resultados e auditoria de unicidade (Regra 6)
-	    const linhasValidas = [];
-	    const inconsistencias = [];
-	    
-	    // Conjuntos para garantir unicidade global cruzada e interna de valores operacionais
-	    const valoresUnicosGlobais = new Set();
-	
-	    // =========================================================================
-	    // Processamento Linha por Linha
-	    // =========================================================================
-	    for (let i = 1; i < linhas.length; i++) {
-	        // Ignora linhas de rodapé ou vazias que o Excel gera
-	        if (linhas[i].replace(/[;, ]/g, "").trim() === "") continue;
-	
-	        const celulas = linhas[i].split(";");
-	        const numeroLinhaPlanilha = i + 1; // Para exibição amigável ao usuário
-	
-	        // Extração das variáveis por índice posicional travado (Regra 1)
-	        const vRomaneio   = celulas[0] ? celulas[0].trim() : "";
-	        const vOv         = celulas[1] ? celulas[1].trim() : "";
-	        const vFornecCross= celulas[2] ? celulas[2].trim() : "";
-	        const vNfCross    = celulas[3] ? celulas[3].trim() : "";
-	        const vFornecLast = celulas[4] ? celulas[4].trim() : "";
-	        const vNfLast     = celulas[5] ? celulas[5].trim() : "";
-	        const vVolumes    = celulas[6] ? celulas[6].trim() : "";
-	
-	        // Auxiliar para agrupar os desvios encontrados especificamente nesta linha
-	        const errosDaLinha = [];
-	
-	        // Conversões numéricas de segurança para os testes relacionais
-	        const nFornecCross = parseFloat(vFornecCross) || 0;
-	        const nNfCross     = parseFloat(vNfCross) || 0;
-	        const nVolumes     = parseFloat(vVolumes) || 0;
-	        const nRomaneio    = parseFloat(vRomaneio) || 0;
-	        const nOv          = parseFloat(vOv) || 0;
-	        const nNfLast      = parseFloat(vNfLast) || 0;
-	
-	        // =========================================================================
-	        // REGRA 2: Campos Obrigatórios por Padrão (> 0 e Não Vazios)
-	        // OBRIGATÓRIOS: ROMANEIO, OV, FORNEC_LAST, NF_LAST, VOLUMES
-	        // =========================================================================
-	     // bkp   if (!vRomaneio || isNaN(nRomaneio) || nRomaneio <= 0) errosDaLinha.push("ROMANEIO inválido ou vazio (deve ser > 0)");
-			if (!vRomaneio || String(vRomaneio).trim() === "" || (!isNaN(vRomaneio) && Number(vRomaneio) <= 0)) errosDaLinha.push("ROMANEIO inválido (não pode ser vazio e, se numérico, deve ser > 0)");
-	        if (!vOv || isNaN(nOv) || nOv <= 0) errosDaLinha.push("OV inválido ou vazio (deve ser > 0)");
-	        if (!vFornecLast || vFornecLast.trim() === "") errosDaLinha.push("FORNEC_LAST não pode ser vazio");
-	        if (!vNfLast || isNaN(nNfLast) || nNfLast <= 0) errosDaLinha.push("NF_LAST inválido ou vazio (deve ser > 0)");
-	        if (!vVolumes || isNaN(nVolumes) || nVolumes <= 0) errosDaLinha.push("VOLUMES inválido ou vazio (deve ser > 0)");
-	
-	        // =========================================================================
-	        // REGRA 3: Condicional FORNEC_CROSS -> NF_CROSS
-	        // =========================================================================
-	        if (nFornecCross > 0) {
-	            if (isNaN(nNfCross) || nNfCross <= 0) {
-	                errosDaLinha.push("NF_CROSS deve ser > 0 quando FORNEC_CROSS estiver preenchido");
-	            }
-	        }
-	
-	        // =========================================================================
-	        // REGRA 4: Conflito Identificadores (FORNEC_CROSS != FORNEC_LAST)
-	        // =========================================================================
-	        if (nFornecCross > 0 && vFornecCross === vFornecLast) {
-	            errosDaLinha.push(`Conflito: FORNEC_CROSS não pode ser idêntico ao FORNEC_LAST ([${vFornecCross}])`);
-	        }
-	
-	        // =========================================================================
-	        // REGRA 5: Conflito Documental (NF_CROSS != NF_LAST)
-	        // =========================================================================
-	        if (nNfCross > 0 && vNfCross === vNfLast) {
-	            errosDaLinha.push(`Conflito: NF_CROSS não pode ser idêntico à NF_LAST ([${vNfCross}])`);
-	        }
-	
-	        // =========================================================================
-	        // REGRA 6: Unicidade Absoluta Cruzada (Sem duplicidade de valores exatos)
-	        // Escopo: FORNEC_CROSS, FORNEC_LAST, NF_CROSS, NF_LAST
-	        // =========================================================================
-	        const chavesParaVerificar = [
-	            { nome: "FORNEC_CROSS", valor: vFornecCross, numerico: nFornecCross },
-	            { nome: "FORNEC_LAST",  valor: vFornecLast,  numerico: true }, // sempre string/id
-	            { nome: "NF_CROSS",     valor: vNfCross,     numerico: nNfCross },
-	            { nome: "NF_LAST",      valor: vNfLast,      numerico: nNfLast }
-	        ];
-	
-	        chavesParaVerificar.forEach(item => {
-	            // Só valida se o campo tiver conteúdo útil ativo (>0 para números ou string não vazia)
-	            const possuiValorValido = (typeof item.numerico === "number") ? item.numerico > 0 : (item.valor !== "");
-	            
-	            if (possuiValorValido) {
-	                if (valoresUnicosGlobais.has(item.valor)) {
-	                    errosDaLinha.push(`Duplicidade: O valor [${item.valor}] encontrado na coluna ${item.nome} já existe em outra célula do arquivo.`);
-	                } else {
-	                    valoresUnicosGlobais.add(item.valor);
-	                }
-	            }
-	        });
-	
-	        // Separador de Destinos (Carga Limpa vs Linha Recusada)
-	        if (errosDaLinha.length > 0) {
-	            inconsistencias.push({
-	                linha: numeroLinhaPlanilha,
-	                dados: celulas.join(" | "),
-	                motivos: errosDaLinha
-	            });
-	        } else {
-	            linhasValidas.push(linhas[i]);
-	        }
-	    }
-	
-	    // 🔄 Mude o return final desta função para:
-	    return {
-	        valido: true,
-	        linhasValidas: linhasValidas,
-	        inconsistencias: inconsistencias,
-	        cabecalho: linhas[0], // Guarda apenas a string da linha 1 limpa
-	        delimitador: delimitador // 🔥 NOVO: Repassa se o arquivo é "," ou ";"
-	    };
-	}
 
-
-		function analisarRegrasNegocioCSV(conteudo, ufSelecionada) {
-    const linhas = conteudo.split(/\r?\n/).filter(l => l.trim() !== "");
+	function analisarRegrasNegocioCSV(conteudo, ufSelecionada) {
+    const linhas = conteudo.split(\(/\r\)?\n/).filter(l => l.trim() !== "");
     if (linhas.length < 2) {
         return { valido: false, erroCritico: "O arquivo enviado não possui dados operacionais." };
     }
 
-    // REGRA 1: Validação Rígida de Cabeçalho e Ordem Exata
+    // 🎯 AJUSTE DE INFRAESTRUTURA: Detecção automática e dinâmica do delimitador real do arquivo
+    const primeiraLinha = linhas[0];
+    const delimitador = primeiraLinha.indexOf(';') > -1 ? ';' : ',';
+
+    // =========================================================================
+    // REGRA 1: Validação Rígida de Cabeçalho e Bloqueio de Colunas Extras
+    // =========================================================================
     const cabecalhoEsperado = ["ROMANEIO", "OV", "FORNEC_CROSS", "NF_CROSS", "FORNEC_LAST", "NF_LAST", "VOLUMES"];
-    const cabecalhoReal = linhas[0].toUpperCase().replace(/[\s\t\r]/g, "").split(";"); 
+    
+    // Captura a primeira linha e normaliza os termos para comparação limpa
+    const cabecalhoReal = primeiraLinha.toUpperCase().replace(/[\s\t\(\r\)]/g, "").split(delimitador); 
     
     if (cabecalhoReal.length < cabecalhoEsperado.length) {
         return { valido: false, erroCritico: "Layout Inválido: O arquivo possui menos colunas do que o padrão obrigatório." };
     }
 
+    // 🩹 INJEÇÃO CIRÚRGICA 1: Bloqueia e rejeita o arquivo caso existam colunas a mais (além das 7 permitidas)
+    if (cabecalhoReal.length > cabecalhoEsperado.length) {
+        console.warn(`🚫 [REJEIÇÃO DE ESTRUTURA] Arquivo com colunas extras detectado: ${cabecalhoReal.length} colunas.`);
+        return { 
+            valido: false, 
+            erroCritico: `Layout Inválido: O arquivo contém colunas adicionais além das permitidas. Esperado: exatamente ${cabecalhoEsperado.length} colunas, Encontrado: ${cabecalhoReal.length} colunas.` 
+        };
+    }
+
+    // Validação da ordem estrita
     for (let i = 0; i < cabecalhoEsperado.length; i++) {
         if (cabecalhoReal[i] !== cabecalhoEsperado[i]) {
             return { 
@@ -2867,14 +2741,16 @@ window.addEventListener('beforeunload', function (event) {
     const inconsistencias = [];
     const valoresUnicosGlobais = new Set();
 
+    // =========================================================================
     // Processamento Linha por Linha
+    // =========================================================================
     for (let i = 1; i < linhas.length; i++) {
-        if (linhas[i].replace(/[;, ]/g, "").trim() === "") continue;
+        if (linhas[i].replace(new RegExp(`[${delimitador} ]`, 'g'), "").trim() === "") continue;
 
-        const celulas = linhas[i].split(";");
-        const numeroLinhaPlanilha = i + 1;
-        const errosDaLinha = [];
+        const celulas = linhas[i].split(delimitador);
+        const numeroLinhaPlanilha = i + 1; 
 
+        // Extração posicional por delimitador dinâmico
         const vRomaneio   = celulas[0] ? celulas[0].trim() : "";
         const vOv         = celulas[1] ? celulas[1].trim() : "";
         const vFornecCross= celulas[2] ? celulas[2].trim() : "";
@@ -2883,57 +2759,95 @@ window.addEventListener('beforeunload', function (event) {
         const vNfLast     = celulas[5] ? celulas[5].trim() : "";
         const vVolumes    = celulas[6] ? celulas[6].trim() : "";
 
+        const errosDaLinha = [];
+
+        // 🩹 INJEÇÃO CIRÚRGICA 2: Travas estritas contra números decimais (Aceita apenas Inteiros)
+        // Expressão regular para testar se uma string não vazia contém um número com casa decimal (ponto ou vírgula)
+        const regexDecimal = /[.,]\d+/;
+
+        // Lista de checagem dos campos que obrigatoriamente devem ser números inteiros (incluindo o ID de Romaneio caso seja puramente numérico)
+        const camposNumericosEstritos = [
+            { nome: "ROMANEIO", valor: vRomaneio },
+            { nome: "OV", valor: vOv },
+            { nome: "FORNEC_CROSS", valor: vFornecCross },
+            { nome: "NF_CROSS", valor: vNfCross },
+            { nome: "NF_LAST", valor: vNfLast },
+            { nome: "VOLUMES", valor: vVolumes }
+        ];
+
+        camposNumericosEstritos.forEach(campo => {
+            // Se o campo tiver valor ativo e contiver padrões decimais, bloqueia a linha imediatamente
+            if (campo.valor !== "" && regexDecimal.test(campo.valor)) {
+                errosDaLinha.push(`Bloqueio de Tipo: A coluna ${campo.nome} não aceita valores decimais, apenas números inteiros.`);
+            }
+        });
+
+        // Conversões numéricas de segurança para os testes relacionais subsequentes
         const nFornecCross = parseFloat(vFornecCross) || 0;
         const nNfCross     = parseFloat(vNfCross) || 0;
         const nVolumes     = parseFloat(vVolumes) || 0;
-        const nRomaneio    = parseFloat(vRomaneio) || 0;
         const nOv          = parseFloat(vOv) || 0;
         const nNfLast      = parseFloat(vNfLast) || 0;
 
+        // =========================================================================
         // REGRA 2: Campos Obrigatórios por Padrão (> 0 e Não Vazios)
-        // bkp if (!vRomaneio || isNaN(nRomaneio) || nRomaneio <= 0) errosDaLinha.push("ROMANEIO inválido ou vazio (deve ser > 0)");
-        if (!vRomaneio || String(vRomaneio).trim() === "" || (!isNaN(vRomaneio) && Number(vRomaneio) <= 0)) errosDaLinha.push("ROMANEIO inválido (não pode ser vazio e, se numérico, deve ser > 0)");
-		if (!vOv || isNaN(nOv) || nOv <= 0) errosDaLinha.push("OV inválido ou vazio (deve ser > 0)");
+        // =========================================================================
+        if (!vRomaneio || String(vRomaneio).trim() === "" || (!isNaN(vRomaneio) && Number(vRomaneio) <= 0)) {
+            errosDaLinha.push("ROMANEIO inválido (não pode ser vazio e, se numérico, deve ser > 0)");
+        }
+        if (!vOv || isNaN(nOv) || nOv <= 0) errosDaLinha.push("OV inválido ou vazio (deve ser > 0)");
         if (!vFornecLast || vFornecLast.trim() === "") errosDaLinha.push("FORNEC_LAST não pode ser vazio");
         if (!vNfLast || isNaN(nNfLast) || nNfLast <= 0) errosDaLinha.push("NF_LAST inválido ou vazio (deve ser > 0)");
         if (!vVolumes || isNaN(nVolumes) || nVolumes <= 0) errosDaLinha.push("VOLUMES inválido ou vazio (deve ser > 0)");
 
+        // =========================================================================
         // REGRA 3: Condicional FORNEC_CROSS -> NF_CROSS
-        if (nFornecCross > 0 && (isNaN(nNfCross) || nNfCross <= 0)) {
-            errosDaLinha.push("NF_CROSS deve ser > 0 quando FORNEC_CROSS estiver preenchido");
+        // =========================================================================
+        if (nFornecCross > 0) {
+            if (isNaN(nNfCross) || nNfCross <= 0) {
+                errosDaLinha.push("NF_CROSS deve ser > 0 quando FORNEC_CROSS estiver preenchido");
+            }
         }
 
-        // REGRA 4: Conflito Identificadores (FORNEC_CROSS != FORNEC_LAST)
+        // =========================================================================
+        // REGRA 4 e 5: Conflito Identificadores / Documental
+        // =========================================================================
         if (nFornecCross > 0 && vFornecCross === vFornecLast) {
             errosDaLinha.push(`Conflito: FORNEC_CROSS não pode ser idêntico ao FORNEC_LAST ([${vFornecCross}])`);
         }
-
-        // REGRA 5: Conflito Documental (NF_CROSS != NF_LAST)
         if (nNfCross > 0 && vNfCross === vNfLast) {
             errosDaLinha.push(`Conflito: NF_CROSS não pode ser idêntico à NF_LAST ([${vNfCross}])`);
         }
 
-        // REGRA 6: Unicidade Absoluta Cruzada (Sem duplicidade de valores exatos)
+        // =========================================================================
+        // REGRA 6: Unicidade Absoluta Cruzada Inter-Células
+        // =========================================================================
         const chavesParaVerificar = [
             { nome: "FORNEC_CROSS", valor: vFornecCross, numerico: nFornecCross },
-            { nome: "FORNEC_LAST",  valor: vFornecLast,  numerico: false },
+            { nome: "FORNEC_LAST",  valor: vFornecLast,  numerico: true }, 
             { nome: "NF_CROSS",     valor: vNfCross,     numerico: nNfCross },
             { nome: "NF_LAST",      valor: vNfLast,      numerico: nNfLast }
         ];
 
         chavesParaVerificar.forEach(item => {
-            const possuiValorValido = (item.numerico !== false) ? item.numerico > 0 : (item.valor !== "");
+            const possuiValorValido = (typeof item.numerico === "number") ? item.numerico > 0 : (item.valor !== "");
+            
             if (possuiValorValido) {
                 if (valoresUnicosGlobais.has(item.valor)) {
-                    errosDaLinha.push(`Duplicidade: O valor [${item.valor}] na coluna ${item.nome} já existe em outra célula do arquivo.`);
+                    errosDaLinha.push(`Duplicidade: O valor [${item.valor}] encontrado na coluna ${item.nome} já existe em outra célula do arquivo.`);
                 } else {
                     valoresUnicosGlobais.add(item.valor);
                 }
             }
         });
 
+        // Distribuição de Destino (Validadas vs Inconsistentes)
         if (errosDaLinha.length > 0) {
-            inconsistencias.push({ linha: numeroLinhaPlanilha, dados: celulas.join(" | "), motivos: errosDaLinha });
+            inconsistencias.push({
+                linha: numeroLinhaPlanilha,
+                dados: celulas.join(" | "),
+                motivos: errosDaLinha
+            });
         } else {
             linhasValidas.push(linhas[i]);
         }
@@ -2943,7 +2857,8 @@ window.addEventListener('beforeunload', function (event) {
         valido: true,
         linhasValidas: linhasValidas,
         inconsistencias: inconsistencias,
-        cabecalho: linhas[0]
+        cabecalho: linhas[0], 
+        delimitador: delimitador 
     };
 }
 
