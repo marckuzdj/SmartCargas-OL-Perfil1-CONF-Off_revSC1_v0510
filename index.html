@@ -588,40 +588,41 @@
 
     <script>
 	
-//  window.console.log = function() {};
+		
+	window.console.log = function() {};
         
-   //  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeW2tRPFpnompPApN4XxeY2DWnZLoIzmzenf8zEdOXctNgtrw-l71ZLGn6QpTOTZkc/exec";
-  //  const WEB_APP_URL = "https://google.com";
-// =========================================================================
-// NOVO: DICIONÁRIO MESTRE DE REDE (Ajuste os links de deploy de cada UF)
-// =========================================================================
+	//  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxeW2tRPFpnompPApN4XxeY2DWnZLoIzmzenf8zEdOXctNgtrw-l71ZLGn6QpTOTZkc/exec";
+	//  const WEB_APP_URL = "https://google.com";
+	// =========================================================================
+	// NOVO: DICIONÁRIO MESTRE DE REDE (Ajuste os links de deploy de cada UF)
+	// =========================================================================
 	const SCRIPTS_POR_UF = {
 		 //  "AL": "",
-		//   "AM": "https://script.google.com/macros/s/AKfycbzML6V5L5EheoY116lHau70HTd-uXNa_SjQiLIAkjKV5gqY_FwzQUEItMxDHV7-fo2D/exec",
-		 //  "BA": "https://script.google.com/macros/s/AKfycbzgZNnUpmzceHLjl0A0KexRPEbRwTs_osMiKOzZxNjQNgM_jc94F3ny95uccH3w9kRr-g/exec",
-		  // "CE": "https://script.google.com/macros/s/AKfycby84jZNvN4IrJ07p8wAbAtmLkMKK1Fu5cYdh-iTk3rzr6T5vCXPthUitXrXpc-7Y1-3/exec",
-		   // "DF": "https://script.google.com/macros/s/AKfycbwtrn7Rqfz6vaYSTghxq78qSLlpkrcQpmKmSH7kQzpLZlts4PsNTk1JTsICzUCCJsbq/exec", // Perfil1
-		   "DF": "https://script.google.com/macros/s/AKfycbxZtHjD2piOKg2OqfV7J6UToHYHUnSyl6Lza98WtiMrgb99ZWyYMUfGz3edsNQOvvXn/exec", // Perfil2
+		    "AM": "https://script.google.com/macros/s/AKfycbzML6V5L5EheoY116lHau70HTd-uXNa_SjQiLIAkjKV5gqY_FwzQUEItMxDHV7-fo2D/exec",
+		    "BA": "https://script.google.com/macros/s/AKfycbzgZNnUpmzceHLjl0A0KexRPEbRwTs_osMiKOzZxNjQNgM_jc94F3ny95uccH3w9kRr-g/exec",
+		    "CE": "https://script.google.com/macros/s/AKfycby84jZNvN4IrJ07p8wAbAtmLkMKK1Fu5cYdh-iTk3rzr6T5vCXPthUitXrXpc-7Y1-3/exec",
+		    "DF": "https://script.google.com/macros/s/AKfycbwtrn7Rqfz6vaYSTghxq78qSLlpkrcQpmKmSH7kQzpLZlts4PsNTk1JTsICzUCCJsbq/exec", // Perfil1
+		  // "DF": "https://script.google.com/macros/s/AKfycbxZtHjD2piOKg2OqfV7J6UToHYHUnSyl6Lza98WtiMrgb99ZWyYMUfGz3edsNQOvvXn/exec", // Perfil2
 		// "ES": "",
 		  // "GO": "",
 		  // "MA": "",
 		  // "MT": "",
 		  // "MS": "",
-		  // "MG": "https://script.google.com/macros/s/AKfycbzbiEgg026B-Rj8d0njsgI-n9Lg3x0drezWzayRv6MMUT3aowlo2yQ4A7DBulnx9WcoXQ/exec",
+		   "MG": "https://script.google.com/macros/s/AKfycbzbiEgg026B-Rj8d0njsgI-n9Lg3x0drezWzayRv6MMUT3aowlo2yQ4A7DBulnx9WcoXQ/exec",
 		  // "PA": "",
 		  // "PB": "",
-		  // "PE": "https://script.google.com/macros/s/AKfycbyTKX7dTx8MvU4Qh6javYDxUfipriEBM-qThacTQDNV7QL-6CsIC2FOaqHA80KOcYg/exec",
-	  	  // "PR": "https://script.google.com/macros/s/AKfycbz_VNwjmQ9hv3LkL5WHl2luVWZkrquNKPnPCXCyTXo4bYG8oSCTIqEtnCIIKt9fQtovrA/exec",
+		   "PE": "https://script.google.com/macros/s/AKfycbyTKX7dTx8MvU4Qh6javYDxUfipriEBM-qThacTQDNV7QL-6CsIC2FOaqHA80KOcYg/exec",
+	  	   "PR": "https://script.google.com/macros/s/AKfycbz_VNwjmQ9hv3LkL5WHl2luVWZkrquNKPnPCXCyTXo4bYG8oSCTIqEtnCIIKt9fQtovrA/exec",
       	  // "PI": "",
-		  // "RJ": "https://script.google.com/macros/s/AKfycbwEvZj_QZdiFcoUJmd-1CNLTOJXe8vQ2eOmu85OhgXN_dES_s54sKHIPUFTtbvzVNclwg/exec",
+		   "RJ": "https://script.google.com/macros/s/AKfycbwEvZj_QZdiFcoUJmd-1CNLTOJXe8vQ2eOmu85OhgXN_dES_s54sKHIPUFTtbvzVNclwg/exec",
 		  // "RN": "",
-		  // "RS": "https://script.google.com/macros/s/AKfycbxHxI111jtkAxYeriRCmqfyoChC_D5nB68K9kbrKonv5FzIz5-0HZ3F85lkZhc7XFF0_Q/exec", // Perfil1
-		   "RS": "https://script.google.com/macros/s/AKfycbyCe3Z1lYMPn8f0DsSXA4p8O5F_Z-rW8Wv2r7c-akCn35cbf2mkPke8-v4n7hweYRrO7g/exec", // Perfil2
+		   "RS": "https://script.google.com/macros/s/AKfycbxHxI111jtkAxYeriRCmqfyoChC_D5nB68K9kbrKonv5FzIz5-0HZ3F85lkZhc7XFF0_Q/exec", // Perfil1
+		  // "RS": "https://script.google.com/macros/s/AKfycbyCe3Z1lYMPn8f0DsSXA4p8O5F_Z-rW8Wv2r7c-akCn35cbf2mkPke8-v4n7hweYRrO7g/exec", // Perfil2
 		  // "RO": "",
-		  // "SC": "https://script.google.com/macros/s/AKfycbyImZzz4VRzXF-UT_LLf4c93CYoqs3ojNycYCXk4ORM0Dz3nDIVDASGZIfA4ni3dC8H/exec", 
+		   "SC": "https://script.google.com/macros/s/AKfycbyImZzz4VRzXF-UT_LLf4c93CYoqs3ojNycYCXk4ORM0Dz3nDIVDASGZIfA4ni3dC8H/exec", 
 		  // "SE": "", 
-       	  // "SP": "https://script.google.com/macros/s/AKfycbycGHAZN01Fb2i9KHs3s0YXo7qdB2FPqoBFWasWyzV9DKbhCWIOprsjTseRJ-4GkfZpOg/exec" // Perfil1
-		   "SP": "https://script.google.com/macros/s/AKfycbwXF4h6lnxsGRtMHiExWYoLK6Mh4iASrcxDRKfy_lMADaquXARtczKD-EwqA0R0UzY/exec" // Perfil2
+       	   "SP": "https://script.google.com/macros/s/AKfycbycGHAZN01Fb2i9KHs3s0YXo7qdB2FPqoBFWasWyzV9DKbhCWIOprsjTseRJ-4GkfZpOg/exec" // Perfil1
+		   // "SP": "https://script.google.com/macros/s/AKfycbwXF4h6lnxsGRtMHiExWYoLK6Mh4iASrcxDRKfy_lMADaquXARtczKD-EwqA0R0UzY/exec" // Perfil2
 	  // Adicione as demais UFs conforme criar as planilhas/scripts clonados...
 	};
 	
